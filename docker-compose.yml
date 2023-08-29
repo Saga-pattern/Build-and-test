@@ -1,0 +1,126 @@
+version: '3'
+
+services:
+  # kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+
+  # orchestrator service
+  orchestrator-service:
+    build: 
+      context: ./OrchestratorService
+      dockerfile: Dockerfile
+    ports:
+      - "8182:8182"
+    depends_on:
+      - kafka
+    environment:
+      - spring.kafka.producer.bootstrap-servers=kafka:9092
+      - spring.kafka.consumer.bootstrap-servers=kafka:9092
+
+  # order service
+  order-service:
+    build: 
+      context: ./OrderService
+      dockerfile: Dockerfile
+    ports:
+      - "8181:8181"
+    depends_on:
+      - kafka
+      - order-mysql
+    environment:
+      - spring.datasource.url=jdbc:mysql://order-mysql:3306/saga-order
+      - spring.datasource.username=root
+      - spring.datasource.password=password
+      - spring.kafka.producer.bootstrap-servers=kafka:9092
+      - spring.kafka.consumer.bootstrap-servers=kafka:9092
+
+  order-mysql:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=saga-order
+    volumes:
+      - order-db:/var/lib/mysql
+
+  # payment service
+  payment-service:
+    build: 
+      context: ./PaymentService
+      dockerfile: Dockerfile
+    ports:
+      - "8184:8184"
+    depends_on:
+      - kafka
+      - payment-mysql
+    environment:
+      - spring.datasource.url=jdbc:mysql://payment-mysql:3306/saga-payment
+      - spring.datasource.username=root
+      - spring.datasource.password=password
+      - spring.kafka.producer.bootstrap-servers=kafka:9092
+      - spring.kafka.consumer.bootstrap-servers=kafka:9092
+
+  payment-mysql:
+    image: mysql:8.0
+    ports:
+      - "3308:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=saga-payment
+    volumes:
+      - payment-db:/var/lib/mysql
+
+  # stock service
+  stock-service:
+    build: 
+      context: ./StockService
+      dockerfile: Dockerfile
+    ports:
+      - "8183:8183"
+    depends_on:
+      - kafka
+      - stock-mysql
+    environment:
+      - spring.datasource.url=jdbc:mysql://stock-mysql:3306/saga-stock
+      - spring.datasource.username=root
+      - spring.datasource.password=password
+      - spring.kafka.producer.bootstrap-servers=kafka:9092
+      - spring.kafka.consumer.bootstrap-servers=kafka:9092
+
+  stock-mysql:
+    image: mysql:8.0
+    ports:
+      - "3309:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=saga-stock
+    volumes:
+      - stock-db:/var/lib/mysql
+
+volumes:
+  order-db:
+  payment-db:
+  stock-db:
+  
