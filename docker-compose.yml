@@ -27,9 +27,7 @@ services:
 
   # orchestrator service
   orchestrator-service:
-    build: 
-      context: ./OrchestratorService
-      dockerfile: Dockerfile
+    image: vncharles/saga-orchestrator-service:latest
     ports:
       - "8182:8182"
     depends_on:
@@ -40,9 +38,7 @@ services:
 
   # order service
   order-service:
-    build: 
-      context: ./OrderService
-      dockerfile: Dockerfile
+    image: vncharles/saga-order-service:latest
     ports:
       - "8181:8181"
     depends_on:
@@ -67,9 +63,7 @@ services:
 
   # payment service
   payment-service:
-    build: 
-      context: ./PaymentService
-      dockerfile: Dockerfile
+    image: vncharles/saga-payment-service:latest
     ports:
       - "8184:8184"
     depends_on:
@@ -94,9 +88,7 @@ services:
 
   # stock service
   stock-service:
-    build: 
-      context: ./StockService
-      dockerfile: Dockerfile
+    image: vncharles/saga-stock-service:latest
     ports:
       - "8183:8183"
     depends_on:
