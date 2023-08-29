@@ -1,7 +1,7 @@
 # How to build and run
 Clone project
 ```
-git clone https://github.com/vncharles/Saga-pattern.git
+git clone https://github.com/Saga-pattern/Deployment-and-test.git
 ```
 
 Run docker-compose
